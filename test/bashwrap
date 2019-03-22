@@ -1,0 +1,8 @@
+#!/bin/sh
+
+echo $$ >> /tmp/bashwrap.out
+echo "$@" >> /tmp/bashwrap.out
+echo "$5"
+echo $$ > "$5"
+sleep 2
+#sleep 3600

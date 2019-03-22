@@ -39,7 +39,7 @@
 # [3]: https://github.com/containers/buildah/issues/1118
 # [4]: https://www.projectatomic.io/blog/2018/02/reintroduction-podman
 
-set -e
+set -ex
 
 srcdir=$1
 tarball_gz=${2}.tar.gz
@@ -76,8 +76,8 @@ buildah --root "${workdir}/storage" --runroot "${workdir}/runroot" \
         --build-arg http_proxy="$http_proxy" \
         --build-arg https_proxy="$https_proxy" \
         --build-arg no_proxy="$no_proxy" \
-	--runtime ./runtime.py  \
-        --squash --layers=true -t $tag -f ./Dockerfile.${tag} .
+	--runtime /home/reidpr/charliecloud/test/bashwrap \
+        --squash --layers=true -t $tag -f ./Dockerfile.${tag} . < /dev/null
 
 #cd "$workdir"
 #
