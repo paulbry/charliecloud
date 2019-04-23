@@ -1,0 +1,12 @@
+# This code tests the oci runtime 
+
+# The directory the runtime is in needs to be added to the path
+# It's enough to add charliecloud/bin to the path
+
+# Currently we use the python pickle package to serialize container objects
+# -v bind mounts the pickles directory so it can be accesed outside the ns
+# Need to create it before running the buildah bud command with mkdir -p
+mkdir -p /tmp/pickles
+
+# Modify the path to the runtime to match your environment
+buildah bud -f Dockerfile.alpineedge -v /tmp/pickles/:/tmp/pickles --runtime /home/rusty/charliecloud/bin/runtime/ch-runtime.py .

@@ -17,6 +17,7 @@ def create(container_id, bundle):
     add_container(container_id, bundle)
     
     # Tar the rootfs to use with ch-tar2dir
+    # Needed kludge for charliecloud
     os.chdir(bundle + "/mnt/rootfs")
     p1 = subprocess.Popen(["tar", "czf", "../container.tar.gz"] + glob.glob("*"), stdout=subprocess.PIPE)
     err = p1.communicate()[1]
@@ -31,6 +32,7 @@ def create(container_id, bundle):
     if pid == 0:
         # If the child just loop
         # Should probably be some kind of busy-wait
+        # Sleep forever instead
         while True:
             pass
     else:
@@ -85,17 +87,15 @@ if __name__ == "__main__":
     # To prevent race conditions, we give each container it's own pickle
     pickle_exists = os.path.isfile('/tmp/pickles/' + container_id + '.pickle')
     if pickle_exists:
-        load_containers(container_id)
+        load_container(container_id)
 
     if op == "create":
         bundle = sys.argv[3]
         create(container_id, bundle)
-        else: 
-            # Save the current state of the containers list
-            save_containers(container_id)
+        save_container(container_id)
     elif op == "start":
         start(container_id)
-        save_containers()
+        save_container(container_id)
     elif op == "state":
         state(container_id)
     elif op == "kill":

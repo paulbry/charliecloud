@@ -17,8 +17,7 @@ https://github.com/containers/buildah/blob/master/docs/buildah-bud.md
 
 Arguments provided to runtime "create" by Buildah:
 
-   see runc create man page:
-https://raw.githubusercontent.com/opencontainers/runc/master/man/runc-create.8.md
+   see runc create man page: https://raw.githubusercontent.com/opencontainers/runc/master/man/runc-create.8.md
 
   --bundle DIR           path to directory containing the "bundle directory"
                          e.g.: /tmp/buildah115496812
@@ -43,7 +42,9 @@ https://raw.githubusercontent.com/opencontainers/runc/master/man/runc-create.8.m
 
   CONTAINER_ID           e.g.: buildah-buildah115496812
 
-The bundle doesn't have much in it at "create" time:
+The bundle contains a roots in the mnt directory at create time. 
+The bundle isn't visible unless in the same usernamespace as the one in 
+which the container is built.
 
   $ sudo ls -lR .
   .:
@@ -69,6 +70,7 @@ Observations:
 
   1. Note the two directories with 000 and 100 permissions. That's weird.
   2. hosts and resolv.conf are identical to the host's.
+  3. The directories with 000 permisions are just because this file doesn't really exist in this namespace.
 
 config.json is the meat here I think; this came from "jq . config.json".
 Commentary included in-line (note that jq's terminal output is colorized).
@@ -200,6 +202,8 @@ Probably we should do "--no-home" in OCI mode.
 
 This says that Buildah wants a pseudoterminal allocated. I don't know much
 about that. Neither Buildah nor OCI docs are very clear about how this works.
+
+It seems like the pseudoterminal isn't actually necessary but further research is required. 
 
     "cwd": "/",
 
