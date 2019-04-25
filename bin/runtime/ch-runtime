@@ -1,0 +1,107 @@
+#!/usr/bin/env python
+import sys
+import os
+import subprocess
+import signal
+import time
+from container import *
+from error import *
+
+# This script is the beginning of a barebones implementation of the OCI runtime spec
+# Located at https://github.com/opencontainers/runtime-spec/blob/master/runtime.md#start 
+
+# Create a container.
+def create(container_id, bundle):
+    # We fork this process then write the pid of the child to the pid file.
+    # The child sleeps to satisfy buildah's need for a running container.
+
+    pid = os.fork()
+    if pid == 0:
+        # If child, just sleep until you recieve SIGUSR1.
+        def signal_handler(sig, frame):
+            sys.exit(0)
+        signal.signal(signal.SIGUSR1, signal_handler)
+        while True:
+            time.sleep(1)
+    else:
+        # Write the pid of the child to the pid file to appease buildah.
+        pid_file = bundle + "/pid"
+        with open(pid_file, "w") as file:
+            file.write(str(pid))
+
+    # Add the container to the container list.
+    add_container(container_id, bundle, pid)
+    
+    # Create create hosts and resolv.cong if they do not exist.
+    open(bundle + '/mnt/rootfs/etc/hosts', 'a').close()
+    open(bundle + '/mnt/rootfs/etc/resolv.conf', 'a').close()
+
+    # Create sentinel file for ch-run.
+    with open('WEIRD_AL_YANKOVIC', 'a') as file:
+        file.write('This directory is a Charliecloud image')
+
+    # Create mnts for ch-run.
+    for i in range(0, 10):
+        os.mkdir(bundle + '/mnt/rootfs/mnt/' + str(i))
+ 
+# Start a container.
+def start(container_id):
+    container = get_container(container_id)
+    if not container:
+        err_exit("ch-runtime: (Start) Container does not exist")
+
+    # Create the command to run in the container.
+    # TODO use the parameters from the container to see if we actually need 
+    # -w and if it should be root
+    command = ["ch-run", "-w", "--uid=0", "--gid=0", container.path, "--", 
+               "sh", "-c", container.cmd[2]] 
+
+    # Run the RUN command with the container.
+    output = subprocess.check_output(command, stdin=subprocess.PIPE)
+    print_err(output)
+    # Kill the 'dummy container'.
+    os.kill(container.pid, signal.SIGUSR1)
+
+# Return the current state of a container.
+def state(container_id):
+    if not container_exists(container_id):
+        error("state: container does not exist")
+    container = get_container(container_id)
+    # Format the state as a dict and convert to json.
+    state = { 'ociVersion': container.version, 'id': container.id,
+              'status': container.status, 'pid': container.pid,
+              'bundle': container.bundle }
+    state = json.dumps(state)
+    state_json = json.loads(state)
+    # Send state to buildah through stdout.
+    print(json.dumps(state_json))
+    return 0
+
+if __name__ == "__main__":
+    if len(sys.argv) < 2:
+        err_exit("Usage: ch_runtime [create | start | state | kill | delete]")
+    op = sys.argv[1]
+    # Get the last argument passed in.
+    container_id = sys.argv[-1]
+
+    # Check if we have a 'pickle' of the previous state.
+    # To prevent race conditions, give each container it's own pickle.
+    pickle_exists = os.path.isfile('/tmp/pickles/' + container_id + '.pickle')
+    if pickle_exists:
+        load_container(container_id)
+
+    if op == "create":
+        bundle = sys.argv[3]
+        create(container_id, bundle)
+        save_container(container_id)
+    elif op == "start":
+        start(container_id)
+        save_container(container_id)
+    elif op == "state":
+        state(container_id)
+    elif op == "kill":
+        pass
+    elif op == "delete":
+        pass
+    else:
+        err_exit("ch_runtime: Unknown operation")

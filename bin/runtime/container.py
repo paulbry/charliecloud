@@ -1,37 +1,29 @@
-from __future__ import print_function
-import sys
 import collections
 import json
 import pickle
 
 Container = collections.namedtuple('Container', ['version', 'uid', 'gid', 
-                      'read_only', 'env', 'cwd', 'path', 'cmd'])
+                         'read_only', 'env', 'cwd', 'path', 'cmd', 'pid', 
+                         'bundle', 'id', 'status'])
 containers = {}
 
-def add_container(container_id, bundle):
+def add_container(container_id, bundle, pid):
     if container_exists(container_id):
-       # Print error and exit 
+       # Print error and exit.
        err_exit("ch_runtime: Container id: {} already exists".format(container_id))
     else:
         with open(bundle + "/config.json", "r") as f:
             config = json.load(f)
         params = parse_json(config)
-        # Create a new container namedtuple from the params
-        new_container = Container(*params)
+        # Create a new container. Technically status is not stopped, but it
+        # will be by the time buildah gets this information.
+        new_container = Container(*params, pid = pid, bundle = bundle, 
+                        id = container_id, status = "stopped")
         containers[container_id] = new_container
-
-# Returns container state in pretty json
-def print_container(container_id):
-    container = get_container(container_id)
 
 def container_exists(container_id):
     return container_id in containers
 
-def remove_container(container_id):
-    if container_exists(container_id):
-        # Remove 
-        pass
-      
 def get_container(container_id):
     if not container_exists(container_id):
         return -1
