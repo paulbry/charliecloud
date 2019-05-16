@@ -45,6 +45,9 @@ Arguments
 
   :code: `examples`
     Run examples. Depends on successful :code:`ch-test run`
+    
+  :code: `perms`
+    Run permissions tests. Depends on successful :code:`ch-test build`
 
 Example
 =======
