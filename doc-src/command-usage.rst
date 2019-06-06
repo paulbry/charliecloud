@@ -81,3 +81,10 @@ ch-tar2dir
 Unpack an image tarball into a directory.
 
 .. include:: ./ch-tar2dir_desc.rst
+
+ch-test
++++++++
+
+FIXME
+
+.. include:: ./ch-test_desc.rst

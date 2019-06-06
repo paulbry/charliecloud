@@ -3,51 +3,68 @@ Synopsis
 
 ::
 
-  $ ch-test [OPTION..] ARG
+  $ ch-test [ARG ...] [PHASE]
 
 Description
 ===========
 
-Run the charliecloud test suite.
+Run the Charliecloud test suite.
 
-Options
+For details about the test suite, see:
+https://hpc.github.io/charliecloud/test.html
+
+Available phases are the following. Each phase requires successful completion
+of the prior phase at the same scope.
+
+  :code:`build`
+    Test that images build correctly.
+
+  :code:`run`
+    Test that images run correctly. If :code:`sudo` privileges are
+    available, also test file system permission enforcement.
+
+  :code:`examples`
+    Test that example applications work correctly.
+
+  :code:`all`
+    Test all three phases in the order above. (Default.)
+
+Clean-up phase:
+
+  :code:`clean`
+    Delete all test data, including in builder storage.
+
+Other arguments:
+
+  :code:`-p`, :code:`--prefix=DIR`
+    Directory containing image files/directories and other test fixtures if
+    the relevant environment variables are not set. Default: :code:`/var/tmp`.
+
+  :code:`-s`, :code:`--scope=[quick|standard|full]`
+    Run tests with given scope. Default: :code:`$CH_TEST_SCOPE` if set,
+    otherwise :code:`standard`.
+
+Storage
 =======
 
-  :code:`-t`, :code:`--tar-dir=DST`
-    Set the tarball directoy to path `DST`. Equivilant to setting CH_TEST_TARDIR
-    to :code:`DST` (by default :code: `DST` is :code:`/var/tmp/tar`)
+The test suite requires a few tens of GB of storage for test fixtures:
 
-  :code:`-i`, :code:`--img-dir=DST`
-    Set the image directoy to path `DST`. Equivilant to setting CH_TEST_IMGDIR
-    to :code:`DST` (by default :code: `DST` is :code:`/var/tmp/img`).
+* Builder storage (e.g., layer cache). This goes wherever the builder puts it.
 
-  :code:`-s`, :code:`--scope=SCOPE`
-    Set the scope of the charliecloud test suite to :code:`SCOPE`. Equivilant to
-    setting CH_TEST_SCOPE to :code:`SCOPE` (by default :code:`SCOPE` is
-    :code:`standard`).
+* Image tarballs: :code:`{--prefix}/tar` or :code:`$CH_TEST_TARDIR` if set.
 
-  :code:`-p`, :code:`--perm-dirs='ARG'`
-    Specify the directories :code:`'ARG'` for file permission enforcement tests
-    (by default :code:`'ARG'` is :code:`'/var/tmp /tmp'`).
+* Image directories: :code:`{--prefix}/dir` or :code:`$CH_TEST_IMGDIR` if set.
 
-  :code:`-c`, :code:`--clean`
-    Clean docker image cache. Required sudo.
+* File permission enforcement fixtures: :code:`{--prefix}/perms_test` or
+  :code:`$CH_TEST_PERMDIRS` if set.
 
-Arguments
-=========
+All of these directories are created if they don't exist.
 
-  :code: `build`
-    Test image building and associated functionality.
+Exit status
+===========
 
-  :code: `run`
-    Test images with charliecloud runtime. Requires the contents of
-    :code:`CH_TEST_TARDIR` produced by a successful :code:`ch-test build`.
-
-  :code: `examples`
-    Run examples. Depends on successful :code:`ch-test run`
-    
-  :code: `perms`
-    Run permissions tests. Depends on successful :code:`ch-test build`
+Zero if the tests passed; non-zero if they failed. For phase :code:`clean`,
+zero if everything was deleted correctly, non-zero otherwise.
 
 Example
 =======
@@ -55,15 +72,16 @@ Example
 ::
 
   $ ch-test build
-  CH_TEST_TARDIR empty, using /var/tmp/tar
-  CH_TEST_IMGDIR empty, using /var/tmp/img
-  CH_TEST_PERMDIRS empty, using '/var/tmp tmp'
-  CH_TEST_SCOPE empty, using standard
+  running tests from: /usr/local/src/charliecloud/test
+  CH_TEST_SCOPE:      standard
+  CH_TEST_TARDIR:     /var/tmp/tar
+  CH_TEST_IMGDIR:     /var/tmp/img
+  CH_TEST_PERMDIRS:   /var/tmp tmp
 
   bats build.bats build_auto.bats build_post.bats
   ✓ create tarball directory if needed
   ✓ documentations build
   ✓ version number seems sane
   ✓ executables seem sane
-  ...
-  ...
+  [...]
+  58 tests, 0 failures, 3 skipped
