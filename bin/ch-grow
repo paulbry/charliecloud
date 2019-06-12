@@ -72,7 +72,7 @@ run_shell: LINE
 
 workdir: "WORKDIR"i _WS LINE _NEWLINES
 
-ID: /[A-Za-z0-9_.-]+/
+ID: /[A-Za-z0-9_.\-\/]+/
 HEXID: /[a-fA-F0-9]+/
 LINE: ( LINE_CONTINUE | /[^\n]/ )+
 WORD: /[^ \t\n=]/+
@@ -342,12 +342,14 @@ class I_from_(Instruction):
    def base_pull(self):
       mkdirs(dir_ocis())
       rmtree(dir_image_tmp())
+      mkdirs("%s/%s" % (dir_ocis(), self.fullname))
       # This works with newuidmap and newgidmap not installed.
       cmd(["skopeo", "copy", "docker://" + self.fullname,
            "oci:%s/%s" % (dir_ocis(), self.fullname)])
       cmd(["umoci", "unpack", "--rootless",
            "--image", "%s/%s" % (dir_ocis(), self.fullname), dir_image_tmp()])
       rmtree(dir_image(self.fullname))
+      mkdirs(dir_image(self.fullname))
       os.rename("%s/rootfs" % dir_image_tmp(), dir_image(self.fullname))
       image_fixup(dir_image(self.fullname))
       rmtree(dir_image_tmp())
